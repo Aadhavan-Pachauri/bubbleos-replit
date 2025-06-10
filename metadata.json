@@ -1,0 +1,5 @@
+
+{
+  "name": "React Desktop OS Simulator",
+  "description": "A web-based desktop environment simulation built with React, TypeScript, and Tailwind CSS, featuring a window manager, taskbar, and applications."
+}

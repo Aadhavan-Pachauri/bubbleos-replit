@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BubbleOS Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --primary-bg: #0A192F; /* Deep Navy - slightly darker for more depth */
+        --secondary-bg: #172A45; /* Darker Slate Blue - for secondary panels */
+        --content-bg: #F0F4F8; /* Very Light Grey/Off-white - for app content areas */
+        
+        --titlebar-bg: #2C3E50; /* Charcoal Blue - for window titles */
+        --taskbar-bg: rgba(10, 25, 47, 0.8); /* Deep Navy base, more transparent */
+        --start-menu-bg: rgba(23, 42, 69, 0.85); /* Dark Slate Blue base, more transparent */
+
+        --primary-accent: #64FFDA; /* Bright Mint Green - vibrant accent */
+        --secondary-accent: #00A8CC; /* Bright Cyan - secondary accent */
+        --highlight-accent: #FFD700; /* Gold - for specific highlights if needed */
+        --danger-accent: #FF6B6B; /* Soft Red - for errors or close buttons */
+        
+        --text-primary: #CCD6F6; /* Light Lavender/Blue Tint - for primary text on dark bg */
+        --text-secondary: #A8B2D1; /* Lighter Slate - for secondary text */
+        --text-content: #0A192F; /* Deep Navy - for text on light content backgrounds */
+        --text-placeholder: #8892B0; /* Slate Grey - for placeholders */
+        --text-accent: var(--primary-accent); /* Text that needs to pop */
+
+        --border-color: rgba(100, 255, 218, 0.15); /* Primary accent with low opacity */
+        --focus-ring: var(--primary-accent);
+        --highlight-bg: rgba(100, 255, 218, 0.07); /* Subtle hover background using primary accent */
+
+        --glass-blur: 10px; /* Slightly reduced blur for performance/clarity */
+      }
+
+      html, body {
+        height: 100%;
+        width: 100%;
+      }
+      body { 
+        margin: 0; 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        overflow: hidden; 
+        background-color: var(--primary-bg); 
+        color: var(--text-primary);
+      }
+      #root {
+        height: 100%;
+        width: 100%;
+      }
+      .window-dragging { 
+        cursor: grabbing !important; 
+        user-select: none;
+      }
+      .window-dragging * {
+        cursor: grabbing !important;
+        user-select: none;
+      }
+      .resize-handle {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        right: 0;
+        bottom: 0;
+        cursor: nwse-resize;
+        z-index: 10; 
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px; /* Slimmer scrollbars */
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.1); 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--secondary-accent);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-accent);
+      }
+      /* Ensure Inter font is loaded - updated to avoid full Gstatic URL */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

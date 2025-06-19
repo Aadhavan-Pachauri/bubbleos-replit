@@ -1,9 +1,9 @@
-
 import React, { useReducer } from 'react';
-import { WindowManagerActionType } from '../types'; // WindowInstance, AppDefinition, WindowManagerState, WindowManagerAction removed from types.ts
+import { WindowManagerActionType, WindowManagerState, WindowManagerAction, AppDefinition, WindowInstance } from '../types';
 import { DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, TASKBAR_HEIGHT } from '../constants.tsx';
+import { DEFAULT_APPS } from '../constants.tsx';
 
-const initialState/*: WindowManagerState*/ = {
+const initialState: WindowManagerState = {
   windows: [],
   activeWindowId: null,
   nextZIndex: 100,
@@ -11,10 +11,10 @@ const initialState/*: WindowManagerState*/ = {
   maximizedStateStore: {},
 };
 
-const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowManagerAction*/)/*: WindowManagerState*/ => {
+const windowManagerReducer = (state: WindowManagerState, action: WindowManagerAction): WindowManagerState => {
   switch (action.type) {
     case WindowManagerActionType.OPEN_WINDOW: {
-      const { app } = action.payload; // app was AppDefinition
+      const { app } = action.payload as { app: AppDefinition };
       const newWindowId = `window-${app.id}-${Math.random().toString(36).substr(2, 9)}`;
       
       const existingWindow = state.windows.find(w => w.appId === app.id && !w.isMinimized);
@@ -32,7 +32,7 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
       const windowWidth = app.defaultWidth || DEFAULT_WINDOW_WIDTH;
       const windowHeight = app.defaultHeight || DEFAULT_WINDOW_HEIGHT;
 
-      const newWindow/*: WindowInstance*/ = {
+      const newWindow: WindowInstance = {
         id: newWindowId,
         appId: app.id,
         title: app.name,
@@ -55,7 +55,7 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
       };
     }
     case WindowManagerActionType.CLOSE_WINDOW: {
-      const { id } = action.payload;
+      const { id } = action.payload as { id: string };
       const newMaximizedStateStore = { ...state.maximizedStateStore };
       delete newMaximizedStateStore[id];
       return {
@@ -66,7 +66,7 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
       };
     }
     case WindowManagerActionType.FOCUS_WINDOW: {
-      const { id } = action.payload;
+      const { id } = action.payload as { id: string };
       if (state.activeWindowId === id && state.windows.find(w => w.id === id)?.isFocused) return state;
       return {
         ...state,
@@ -78,7 +78,7 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
       };
     }
     case WindowManagerActionType.MINIMIZE_WINDOW: {
-      const { id } = action.payload;
+      const { id } = action.payload as { id: string };
       return {
         ...state,
         windows: state.windows.map(w =>
@@ -88,14 +88,13 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
       };
     }
     case WindowManagerActionType.TOGGLE_MAXIMIZE_WINDOW: {
-      const { id } = action.payload;
+      const { id } = action.payload as { id: string };
       const targetWindow = state.windows.find(w => w.id === id);
       if (!targetWindow) return state;
 
       const appDefinition = DEFAULT_APPS.find(app => app.id === targetWindow.appId);
       const windowWidth = appDefinition?.defaultWidth || DEFAULT_WINDOW_WIDTH;
       const windowHeight = appDefinition?.defaultHeight || DEFAULT_WINDOW_HEIGHT;
-
 
       if (targetWindow.isMaximized) {
         const restoredState = state.maximizedStateStore[id] || { x: targetWindow.x, y: targetWindow.y, width: windowWidth, height: windowHeight };
@@ -125,17 +124,101 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
         };
       }
     }
+    case WindowManagerActionType.START_DRAG: {
+      console.log('REDUCER: START_DRAG', action.payload);
+      return {
+        ...state,
+        dragState: {
+          isDragging: true,
+          windowId: action.payload.windowId,
+          offsetX: action.payload.offsetX,
+          offsetY: action.payload.offsetY,
+        },
+      };
+    }
     case WindowManagerActionType.DRAG_WINDOW: {
-      const { id, x, y } = action.payload;
+      console.log('REDUCER: DRAG_WINDOW', action.payload);
       return {
         ...state,
         windows: state.windows.map(w =>
-          w.id === id ? { ...w, x, y } : w
+          w.id === action.payload.id ? { ...w, x: action.payload.x, y: action.payload.y } : w
         ),
       };
     }
+    case WindowManagerActionType.END_DRAG: {
+      console.log('REDUCER: END_DRAG');
+      // Snap logic
+      if (state.dragState.isDragging && state.dragState.windowId) {
+        const snapTarget = action.payload && action.payload.snapTarget;
+        const win = state.windows.find(w => w.id === state.dragState.windowId);
+        if (win && win.appId !== 'calculator' && action.payload && action.payload.desktopBox && snapTarget) {
+          const { width: boxWidth, height: boxHeight } = action.payload.desktopBox;
+          let newX = win.x;
+          let newY = win.y;
+          let newWidth = win.width;
+          let newHeight = win.height;
+          switch (snapTarget) {
+            case 'left':
+              newX = 0;
+              newY = 0;
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = boxHeight;
+              break;
+            case 'right':
+              newX = Math.floor(boxWidth / 2);
+              newY = 0;
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = boxHeight;
+              break;
+            case 'top':
+              newX = 0;
+              newY = 0;
+              newWidth = boxWidth;
+              newHeight = boxHeight;
+              break;
+            case 'topleft':
+              newX = 0;
+              newY = 0;
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = Math.floor(boxHeight / 2);
+              break;
+            case 'topright':
+              newX = Math.floor(boxWidth / 2);
+              newY = 0;
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = Math.floor(boxHeight / 2);
+              break;
+            case 'bottomleft':
+              newX = 0;
+              newY = Math.floor(boxHeight / 2);
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = Math.floor(boxHeight / 2);
+              break;
+            case 'bottomright':
+              newX = Math.floor(boxWidth / 2);
+              newY = Math.floor(boxHeight / 2);
+              newWidth = Math.floor(boxWidth / 2);
+              newHeight = Math.floor(boxHeight / 2);
+              break;
+            default:
+              break;
+          }
+          return {
+            ...state,
+            windows: state.windows.map(w =>
+              w.id === win.id ? { ...w, x: newX, y: newY, width: newWidth, height: newHeight } : w
+            ),
+            dragState: {},
+          };
+        }
+      }
+      return {
+        ...state,
+        dragState: {},
+      };
+    }
     case WindowManagerActionType.RESIZE_WINDOW: {
-      const { id, width, height } = action.payload;
+      const { id, width, height } = action.payload as { id: string; width: number; height: number };
       return {
         ...state,
         windows: state.windows.map(w =>
@@ -143,20 +226,12 @@ const windowManagerReducer = (state/*: WindowManagerState*/, action/*: WindowMan
         ),
       };
     }
-     case WindowManagerActionType.SET_WINDOWS:
-      return { ...state, windows: action.payload };
+    case WindowManagerActionType.SET_WINDOWS:
+      return { ...state, windows: action.payload as WindowInstance[] };
     default:
       return state;
   }
 };
-
-// Need to export DEFAULT_APPS from constants to use it here, or pass it down.
-// For simplicity, importing here if it's only used for default sizes logic.
-// This creates a circular dependency if constants.tsx imports from types.ts which might import from hooks.
-// A better approach would be to not have app-specific logic like default sizes directly in the generic window manager hook
-// or to pass such configurations. For now, let's assume constants.tsx can be imported.
-import { DEFAULT_APPS } from '../constants.tsx';
-
 
 export const useWindowManagerReducer = () => {
   return useReducer(windowManagerReducer, initialState);

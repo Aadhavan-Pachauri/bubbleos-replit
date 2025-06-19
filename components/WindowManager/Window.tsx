@@ -1,16 +1,31 @@
 import React, { useCallback, useRef, useEffect, useState } from "react";
-import { WindowManagerActionType } from "../../types";
+import { WindowManagerActionType, WindowInstance } from "../../types";
 import { useWindowManager } from "../../contexts/WindowManagerContext";
 
-const WindowControls = (
-  {
-    windowId,
-    isMaximized,
-    onClose,
-    onMinimize,
-    onMaximize,
-  } /*: WindowControlsProps*/,
-) => {
+interface WindowControlsProps {
+  windowId: string;
+  isMaximized: boolean;
+  onClose: () => void;
+  onMinimize: () => void;
+  onMaximize: () => void;
+}
+
+interface WindowProps {
+  windowInstance: WindowInstance;
+  onMouseDown: (e: React.MouseEvent) => void;
+  onClose: () => void;
+  onMinimize: () => void;
+  onMaximize: () => void;
+  desktopBox: { width: number; height: number };
+}
+
+const WindowControls = ({
+  windowId,
+  isMaximized,
+  onClose,
+  onMinimize,
+  onMaximize,
+}: WindowControlsProps) => {
   const controlButtonBase =
     "w-3.5 h-3.5 md:w-4 md:h-4 rounded-full focus:outline-none flex items-center justify-center text-black/70 font-bold text-[9px] md:text-[10px] shadow-sm transition-all duration-150";
   const iconSizeStyle = { width: "50%", height: "50%" }; // Adjusted for smaller buttons
@@ -101,7 +116,14 @@ const WindowControls = (
   );
 };
 
-const Window = ({ windowInstance } /*: WindowProps*/) => {
+const Window = ({
+  windowInstance,
+  onMouseDown,
+  onClose,
+  onMinimize,
+  onMaximize,
+  desktopBox,
+}: WindowProps) => {
   const { state, dispatch } = useWindowManager();
   const {
     id,
@@ -116,7 +138,7 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
     isMaximized,
     isFocused,
   } = windowInstance;
-  const windowRef = useRef(null);
+  const windowRef = useRef<HTMLDivElement>(null);
   const [isOpening, setIsOpening] = useState(true);
 
   useEffect(() => {
@@ -125,38 +147,43 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
   }, []);
 
   const handleMouseDownHeader = useCallback(
-    (event /*: React.MouseEvent<HTMLDivElement>*/) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       if (isMaximized || event.button !== 0) return;
       event.preventDefault();
       document.body.classList.add("window-dragging");
       dispatch({ type: WindowManagerActionType.FOCUS_WINDOW, payload: { id } });
-      state.dragState = {
-        isDragging: true,
-        windowId: id,
-        offsetX: event.clientX - x,
-        offsetY: event.clientY - y,
-      };
+      dispatch({
+        type: WindowManagerActionType.START_DRAG,
+        payload: {
+          windowId: id,
+          offsetX: event.clientX - x,
+          offsetY: event.clientY - y,
+        },
+      });
     },
-    [dispatch, id, x, y, isMaximized, state],
+    [dispatch, id, x, y, isMaximized],
   );
 
   const handleMouseDownResize = useCallback(
-    (event /*: React.MouseEvent<HTMLDivElement>*/) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       if (isMaximized || event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
       document.body.classList.add("window-dragging");
       dispatch({ type: WindowManagerActionType.FOCUS_WINDOW, payload: { id } });
-      state.dragState = {
-        isResizing: true,
-        windowId: id,
-        originalX: x,
-        originalY: y,
-        originalWidth: width,
-        originalHeight: height,
-      };
+      dispatch({
+        type: WindowManagerActionType.START_RESIZE,
+        payload: {
+          windowId: id,
+          edge: "se", // Only bottom-right for now
+          startX: event.clientX,
+          startY: event.clientY,
+          startWidth: width,
+          startHeight: height,
+        },
+      });
     },
-    [dispatch, id, x, y, width, height, isMaximized, state],
+    [dispatch, id, x, y, width, height, isMaximized],
   );
 
   const handleWindowClick = useCallback(() => {
@@ -165,33 +192,18 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
     }
   }, [isFocused, dispatch, id]);
 
-  const handleClose = useCallback(
-    () =>
-      dispatch({ type: WindowManagerActionType.CLOSE_WINDOW, payload: { id } }),
-    [dispatch, id],
-  );
-  const handleMinimize = useCallback(
-    () =>
-      dispatch({
-        type: WindowManagerActionType.MINIMIZE_WINDOW,
-        payload: { id },
-      }),
-    [dispatch, id],
-  );
-  const handleMaximize = useCallback(
-    () =>
-      dispatch({
-        type: WindowManagerActionType.TOGGLE_MAXIMIZE_WINDOW,
-        payload: { id },
-      }),
-    [dispatch, id],
-  );
   const handleDoubleClickHeader = useCallback(() => {
     dispatch({
       type: WindowManagerActionType.TOGGLE_MAXIMIZE_WINDOW,
       payload: { id },
     });
   }, [dispatch, id]);
+
+  // Clamp position and size
+  const clampedX = Math.max(0, Math.min(x, desktopBox.width - width));
+  const clampedY = Math.max(0, Math.min(y, desktopBox.height - height));
+  const clampedWidth = Math.min(width, desktopBox.width);
+  const clampedHeight = Math.min(height, desktopBox.height);
 
   const windowClasses = `
     absolute flex flex-col 
@@ -201,6 +213,7 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
     overflow-hidden 
     border 
     transition-all duration-200 ease-out /* Changed to ease-out */
+    window-snap-animate
     ${isOpening ? "opacity-0 scale-90 transform" : "opacity-100 scale-100 transform"}
   `;
 
@@ -221,10 +234,10 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
       ref: windowRef,
       className: windowClasses,
       style: {
-        left: x,
-        top: y,
-        width: width,
-        height: height,
+        left: clampedX,
+        top: clampedY,
+        width: clampedWidth,
+        height: clampedHeight,
         zIndex: zIndex,
         minWidth: "300px",
         minHeight: "200px",
@@ -263,9 +276,9 @@ const Window = ({ windowInstance } /*: WindowProps*/) => {
       React.createElement(WindowControls, {
         windowId: id,
         isMaximized: isMaximized,
-        onClose: handleClose,
-        onMinimize: handleMinimize,
-        onMaximize: handleMaximize,
+        onClose: onClose,
+        onMinimize: onMinimize,
+        onMaximize: onMaximize,
       }),
     ),
     React.createElement(

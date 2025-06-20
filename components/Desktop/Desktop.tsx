@@ -107,7 +107,6 @@ const ContextMenu = ({ x, y, onClose, onOpen, app }: ContextMenuProps) => {
       style={menuStyle}
       onContextMenu={(e) => e.preventDefault()}
       className="contextmenu-animate-in"
-      data-oid="swpfb53"
     >
       {app && (
         <button
@@ -118,7 +117,6 @@ const ContextMenu = ({ x, y, onClose, onOpen, app }: ContextMenuProps) => {
           onMouseEnter={() => setHovered("open")}
           onMouseLeave={() => setHovered(null)}
           onClick={() => handleClick(() => onOpen(app))}
-          data-oid="d6bffvz"
         >
           Open
         </button>
@@ -126,7 +124,6 @@ const ContextMenu = ({ x, y, onClose, onOpen, app }: ContextMenuProps) => {
       {app && (
         <div
           style={{ height: 1, background: "#e0e0e0", margin: "0.25rem 0" }}
-          data-oid="920obg-"
         />
       )}
       <button
@@ -137,7 +134,6 @@ const ContextMenu = ({ x, y, onClose, onOpen, app }: ContextMenuProps) => {
         onMouseEnter={() => setHovered("refresh")}
         onMouseLeave={() => setHovered(null)}
         onClick={() => handleClick(() => {})}
-        data-oid="xu2rvxc"
       >
         Refresh
       </button>
@@ -335,12 +331,8 @@ const Desktop = () => {
   }, [snapAssist]);
 
   return (
-    <div
-      className="desktop-flex"
-      onContextMenu={(e) => handleContextMenu(e)}
-      data-oid="xxvvokz"
-    >
-      <div className="desktop-box" ref={boxRef} data-oid="tzl8v:0">
+    <div className="desktop-flex" onContextMenu={(e) => handleContextMenu(e)}>
+      <div className="desktop-box" ref={boxRef}>
         {/* Snap Layout Overlay */}
         {snapTarget && (
           <div
@@ -351,7 +343,6 @@ const Desktop = () => {
               width: `${boxRect.width * SNAP_LAYOUTS.find((l) => l.key === snapTarget)!.w}px`,
               height: `${boxRect.height * SNAP_LAYOUTS.find((l) => l.key === snapTarget)!.h}px`,
             }}
-            data-oid="a-vsfq6"
           />
         )}
         {/* Snap Assist */}
@@ -368,15 +359,9 @@ const Desktop = () => {
               padding: 12,
               boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
             }}
-            data-oid="5w7gxj2"
           >
-            <div
-              style={{ fontWeight: 600, marginBottom: 8 }}
-              data-oid="3a88mz8"
-            >
-              Snap Assist
-            </div>
-            <div style={{ display: "flex", gap: 8 }} data-oid="3kc.vl.">
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Snap Assist</div>
+            <div style={{ display: "flex", gap: 8 }}>
               {state.windows
                 .filter((w) => w.id !== snapAssist.snappedId && !w.isMinimized)
                 .map((w) => (
@@ -396,26 +381,19 @@ const Desktop = () => {
                         payload: { id: w.id },
                       })
                     }
-                    data-oid="_tq3wlo"
                   >
-                    <div style={{ fontSize: 24 }} data-oid="8.-ta9e">
+                    <div style={{ fontSize: 24 }}>
                       {typeof w.icon === "string" ? (
                         <img
                           src={w.icon}
                           alt={w.title}
                           style={{ width: 24, height: 24 }}
-                          data-oid="syjj7ie"
                         />
                       ) : (
                         w.icon
                       )}
                     </div>
-                    <div
-                      style={{ fontSize: 12, marginTop: 4 }}
-                      data-oid="5d.gvf9"
-                    >
-                      {w.title}
-                    </div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>{w.title}</div>
                   </div>
                 ))}
             </div>
@@ -432,20 +410,17 @@ const Desktop = () => {
             top: 0,
             left: 0,
           }}
-          data-oid="xmiflpn"
         >
           {DEFAULT_APPS.map((app: AppDefinition) => (
             <div
               key={app.id}
               onContextMenu={(e) => handleContextMenu(e, app)}
               style={{ userSelect: "none" }}
-              data-oid="tl61.xz"
             >
               <AppIcon
                 app={app}
                 onClick={() => handleAppIconClick(app)}
                 desktopClassName="desktop-icon"
-                data-oid="pihk93y"
               />
             </div>
           ))}
@@ -475,7 +450,6 @@ const Desktop = () => {
               })
             }
             desktopBox={boxRect}
-            data-oid="bv67tjc"
           />
         ))}
 
@@ -486,11 +460,10 @@ const Desktop = () => {
             app={contextMenu.app}
             onClose={handleContextMenuClose}
             onOpen={handleAppIconClick}
-            data-oid="chwe:aw"
           />
         )}
-        <div className="taskbar-animate-in" data-oid="1joqlcd">
-          <Taskbar data-oid="ex3:5fa" />
+        <div className="taskbar-animate-in">
+          <Taskbar />
         </div>
       </div>
     </div>
